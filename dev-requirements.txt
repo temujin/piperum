@@ -1,0 +1,4 @@
+ruff==0.9.3
+build>=1.2.2.post1
+setuptools>=75.8.0
+twine>=6.1.0

@@ -1,0 +1,11 @@
+/.venv
+/.venv/**
+/dist
+/dist/***
+/test.py
+*.egg-info
+*.egg-info/**
+__pycache__
+__pycache__/**
+.mypy_cache
+.mypy_cache/**
