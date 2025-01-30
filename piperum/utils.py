@@ -17,20 +17,21 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-from contextlib import contextmanager
 import os
 import re
 import shlex
 import signal
-from subprocess import Popen, PIPE, STDOUT
 import sys
-from typing import Generator, Union, Dict, List, IO
+from collections.abc import Generator
+from contextlib import contextmanager
+from subprocess import PIPE, Popen, STDOUT
+from typing import IO
 
 
 DO_APPEND_RE = re.compile(r"^\+")
 
 
-def open_stream_w(path: Union[str, os.PathLike] | None) -> IO | None:
+def open_stream_w(path: str | os.PathLike | None) -> IO | None:
     """
     Open/create file for write/append.
 
@@ -44,7 +45,7 @@ def open_stream_w(path: Union[str, os.PathLike] | None) -> IO | None:
         return open(re.sub(r"^\+", "", str(path)).strip(), mode)
 
 
-def open_stream_r(path: Union[str, os.PathLike] | None) -> IO | None:
+def open_stream_r(path: str | os.PathLike | None) -> IO | None:
     """
     Open file for reading.
 
@@ -54,15 +55,15 @@ def open_stream_r(path: Union[str, os.PathLike] | None) -> IO | None:
     if path is None:
         return None
     else:
-        return open(re.sub(r"^\+", "", str(path)).strip(), "r")
+        return open(re.sub(r"^\+", "", str(path)).strip())
 
 
 @contextmanager
 def prepare_std(
     inptxt: str = None,
-    inpfl: Union[str, os.PathLike] = None,
-    outfl: Union[str, os.PathLike] = None,
-    errfl: Union[str, os.PathLike] = None,
+    inpfl: str | os.PathLike = None,
+    outfl: str | os.PathLike = None,
+    errfl: str | os.PathLike = None,
     err2out: bool = False,
 ) -> Generator:
     """
@@ -124,7 +125,14 @@ def wrap_tty() -> Generator:
         os.close(tty_fd)
 
 
-def construct_pipeline(*cmds: str, cwd=None, env=None, stdin=None, stdout=None, stderr=None) -> List[Popen]:
+def construct_pipeline(
+    *cmds: str,
+    cwd: str | None = None,
+    env: dict[str, str] | None = None,
+    stdin: PIPE | None = None,
+    stdout: PIPE | None = None,
+    stderr: PIPE | None = None,
+) -> list[Popen]:
     """
     Spawn processes, connect them by pipes, connect std streams.
 
@@ -137,16 +145,16 @@ def construct_pipeline(*cmds: str, cwd=None, env=None, stdin=None, stdout=None, 
     :returns: list of pipeline Popen objects
     """
 
-    prcs: List[Popen] = []
+    prcs: list[Popen] = []
     pipeline_size: int = len(cmds)
     pgid: int = 0
 
-    prcs_env: Dict = os.environ.copy()
+    prcs_env: dict = os.environ.copy()
     if env is not dict:
         prcs_env.update(env)
 
     for i, cmd in enumerate(cmds):
-        cmd_as_list: List[str] = shlex.split(cmd)
+        cmd_as_list: list[str] = shlex.split(cmd)
 
         prc_stdin: IO | int | None = None
         prc_stdout: IO | int | None = None

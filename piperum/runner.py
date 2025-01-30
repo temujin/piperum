@@ -20,11 +20,11 @@
 import copy
 import os
 import signal
-from subprocess import PIPE, CalledProcessError, Popen
-from typing import Union, Self, LiteralString, Dict, List
+from subprocess import CalledProcessError, PIPE, Popen
+from typing import LiteralString, Self
 
-from piperum.background import TaskPoller, Task
 from piperum import utils
+from piperum.background import Task, TaskPoller
 
 
 class Piperum:
@@ -35,8 +35,8 @@ class Piperum:
     """
 
     def __init__(self, task_poller: TaskPoller) -> Self:
-        self._env: Dict[LiteralString, LiteralString] = {}
-        self._cwd: Union[str, os.PathLike] | None = None
+        self._env: dict[LiteralString, LiteralString] = {}
+        self._cwd: str | os.PathLike | None = None
         self._task_poller: TaskPoller = task_poller
 
     def __call__(
@@ -69,7 +69,7 @@ class Piperum:
     def __exit__(self, *_) -> None:
         pass
 
-    def _kill(self, prcs: List[Popen]) -> None:
+    def _kill(self, prcs: list[Popen]) -> None:
         """
         Send signal to process group.
 
@@ -86,9 +86,9 @@ class Piperum:
         self,
         *cmds: str,
         inptxt: str | None = None,
-        inpfl: Union[str, os.PathLike] | None = None,
-        outfl: Union[str, os.PathLike] | None = None,
-        errfl: Union[str, os.PathLike] | None = None,
+        inpfl: str | os.PathLike | None = None,
+        outfl: str | os.PathLike | None = None,
+        errfl: str | os.PathLike | None = None,
         err2out: bool = False,
         timeout: int | None = None,
     ) -> None:
@@ -105,14 +105,14 @@ class Piperum:
         :raises subprocess.CalledProcessError:  any process of pipeline return code != 0
         """
 
-        prc_inp: Union[str, os.PathLike] | None = inptxt or inpfl
+        prc_inp: str | os.PathLike | None = inptxt or inpfl
         retcode: int = 0
 
         with (
             utils.wrap_tty() as tty_fd,
             utils.prepare_std(inptxt=inptxt, inpfl=inpfl, outfl=outfl, errfl=errfl, err2out=err2out) as std,
         ):
-            prcs: List[Popen] = utils.construct_pipeline(
+            prcs: list[Popen] = utils.construct_pipeline(
                 *cmds, cwd=self._cwd, env=self._env, stdin=std[0], stdout=std[1], stderr=std[2]
             )
 
@@ -137,9 +137,9 @@ class Piperum:
         self,
         *cmds: str,
         inptxt: str | None = None,
-        inpfl: Union[str, os.PathLike] | None = None,
-        errfl: Union[str, os.PathLike] | None = None,
-        err2out=False,
+        inpfl: str | os.PathLike | None = None,
+        errfl: str | os.PathLike | None = None,
+        err2out: bool = False,
         timeout: int | None = None,
     ) -> str | None:
         """
@@ -163,7 +163,7 @@ class Piperum:
             utils.wrap_tty() as tty_fd,
             utils.prepare_std(inptxt=inptxt, inpfl=inpfl, outfl=None, errfl=errfl, err2out=err2out) as std,
         ):
-            prcs: List[Popen] = utils.construct_pipeline(
+            prcs: list[Popen] = utils.construct_pipeline(
                 *cmds, cwd=self._cwd, env=self._env, stdin=std[0], stdout=PIPE, stderr=std[2]
             )
 
@@ -171,18 +171,17 @@ class Piperum:
 
             try:
                 prcs_len: int = len(prcs)
-                res_out: Union[str, bytes] = ""
+                res_out: str | bytes = ""
                 for i, prc in enumerate(prcs):
                     if prcs_len == 1:
                         res_out, _ = prc.communicate(input=prc_inp, timeout=timeout)
+                    elif prc_inp is not None:
+                        prc.communicate(input=prc_inp, timeout=timeout)
+                        prc_inp = None
+                    elif i == prcs_len - 1:
+                        res_out, _ = prc.communicate(timeout=timeout)
                     else:
-                        if prc_inp is not None:
-                            prc.communicate(input=prc_inp, timeout=timeout)
-                            prc_inp = None
-                        elif i == prcs_len - 1:
-                            res_out, _ = prc.communicate(timeout=timeout)
-                        else:
-                            prc.wait(timeout)
+                        prc.wait(timeout)
 
                     retcode = prc.returncode
 
@@ -196,9 +195,9 @@ class Piperum:
     def run_bg(
         self,
         *cmds: str,
-        inpfl: Union[str, os.PathLike] | None = None,
-        outfl: Union[str, os.PathLike] | None = None,
-        errfl: Union[str, os.PathLike] | None = None,
+        inpfl: str | os.PathLike | None = None,
+        outfl: str | os.PathLike | None = None,
+        errfl: str | os.PathLike | None = None,
         err2out: bool = False,
     ) -> Task | None:
         """
@@ -213,7 +212,7 @@ class Piperum:
         """
 
         with utils.prepare_std(inpfl=inpfl, outfl=outfl, errfl=errfl, err2out=err2out) as std:
-            prcs: List[Popen] = utils.construct_pipeline(
+            prcs: list[Popen] = utils.construct_pipeline(
                 *cmds, cwd=self._cwd, env=self._env, stdin=std[0], stdout=std[1], stderr=std[2]
             )
 

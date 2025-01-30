@@ -18,11 +18,11 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import os
-from signal import SIGKILL, SIGTERM
-from subprocess import TimeoutExpired, Popen
 import time
+from signal import SIGKILL, SIGTERM
+from subprocess import Popen, TimeoutExpired
 from threading import Thread
-from typing import Self, List, Set
+from typing import Self
 
 
 class Task:
@@ -32,8 +32,8 @@ class Task:
     :param prcs: list of pipeline Popen objects
     """
 
-    def __init__(self, prcs: List[Popen]) -> Self:
-        self._prcs: List[Popen] = prcs
+    def __init__(self, prcs: list[Popen]) -> Self:
+        self._prcs: list[Popen] = prcs
         self.pid: int = prcs[0].pid
 
     @property
@@ -58,7 +58,7 @@ class Task:
         return False
 
     def __repr__(self) -> str:
-        cmds: List[str] = []
+        cmds: list[str] = []
         for prc in self._prcs:
             cmds.append(" ".join(prc.args))
         return f"""Task(cmd="{" | ".join(cmds)}", alive={self.is_alive}, pid={self.pid})"""
@@ -91,12 +91,12 @@ class Task:
 
 class TaskPoller:
     def __init__(self) -> Self:
-        self.tasks: Set = set()
+        self.tasks: set = set()
         self._poll_th: Thread | None = None
 
     def _poll_func(self) -> None:
         while True:
-            finished_tasks: Set = set()
+            finished_tasks: set = set()
             time.sleep(0.1)
             if not self.tasks:
                 break

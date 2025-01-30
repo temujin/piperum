@@ -17,8 +17,8 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-from piperum.runner import Piperum
 from piperum.background import TaskPoller
+from piperum.runner import Piperum
 
 
 __all__ = ["piperum"]
